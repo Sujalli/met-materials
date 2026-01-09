@@ -52,11 +52,11 @@ struct GameScene{
     var camera = FPCamera()
     
     mutating func update(deltaTime: Float) {
-        ground.rotation.y = sin(deltaTime)
-        house.rotation.y = sin(deltaTime)
-        
+        camera.update(deltaTime: deltaTime)
         if InputController.shared.keysPressed.contains(.keyH){
             print("H is pressed ")
+            
+            
         }
     }
     

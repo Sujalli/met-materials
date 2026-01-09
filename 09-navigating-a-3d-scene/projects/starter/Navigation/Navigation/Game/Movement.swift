@@ -30,45 +30,38 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 
+import MetalKit
+import GameController
 
-import CoreGraphics
-protocol Camera: Transformable {
-var projectionMatrix: float4x4 { get }
-var viewMatrix: float4x4 { get }
-mutating func update(size: CGSize)
-mutating func update(deltaTime: Float)
-    
+enum Settings {
+  static var rotationSpeed: Float { 2.0 }
+  static var translationSpeed: Float { 3.0 }
+  static var mouseScrollSensitivity: Float { 0.1 }
+  static var mousePanSensitivity: Float { 0.008 }
 }
 
-struct FPCamera: Camera {
-var transform = Transform()
-    
-    var aspect: Float = 1.0
-    var fov = Float(70).degreesToRadians
-    var near: Float = 0.1
-    var far: Float = 100
-    var projectionMatrix: float4x4 {
-    float4x4(
-    projectionFov: fov,
-    near: near,
-    far: far,
-    aspect: aspect)
-    }
-    
-    mutating func update(size: CGSize) {
-    aspect = Float(size.width / size.height)
-    }
-    
-    var viewMatrix: float4x4 {
-    (float4x4(rotation: rotation) *
-    float4x4(translation: position)).inverse
-    }
-    
-    mutating func update(deltaTime: Float) {
-            
-        let transform = updateInput(deltaTime: deltaTime)
-        rotation += transform.rotation
-    }
+protocol Movement where Self: Transformable {
 }
 
-extension FPCamera: Movement { }
+extension Movement {
+  var forwardVector: float3 {
+    normalize([sin(rotation.y), 0, cos(rotation.y)])
+  }
+
+  var rightVector: float3 {
+    [forwardVector.z, forwardVector.y, -forwardVector.x]
+  }
+
+    func updateInput(deltaTime: Float) -> Transform {
+    var transform = Transform()
+    let rotationAmount = deltaTime * Settings.rotationSpeed
+    let input = InputController.shared
+    if input.keysPressed.contains(.leftArrow) {
+    transform.rotation.y -= rotationAmount
+    }
+    if input.keysPressed.contains(.rightArrow) {
+    transform.rotation.y += rotationAmount
+    }
+    return transform
+    }
+}
