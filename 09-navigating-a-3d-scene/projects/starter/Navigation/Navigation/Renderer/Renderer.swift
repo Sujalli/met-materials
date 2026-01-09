@@ -44,18 +44,7 @@ class Renderer: NSObject {
   let depthStencilState: MTLDepthStencilState?
 
   // the models to render
-  lazy var house: Model = {
-    let house = Model(name: "lowpoly-house.usdz")
-    house.setTexture(name: "barn", type: BaseColor)
-    return house
-  }()
-
-  lazy var ground: Model = {
-    let ground = Model(name: "ground", primitiveType: .plane)
-    ground.setTexture(name: "grass", type: BaseColor)
-    ground.tiling = 16
-    return ground
-  }()
+  lazy var scene = GameScene()
 
   var timer: Float = 0
   var uniforms = Uniforms()
@@ -159,16 +148,13 @@ extension Renderer: MTKViewDelegate {
     renderEncoder.setRenderPipelineState(pipelineState)
 
     // update and render
-    house.rotation.y = sin(timer)
-    house.render(encoder: renderEncoder, uniforms: uniforms, params: params)
-
-    ground.scale = 40
-    ground.rotation.z = Float(90).degreesToRadians
-    ground.rotation.y = sin(timer)
-    ground.render(
+      scene.update(deltaTime: timer)
+      for model in scene.models {
+      model.render(
       encoder: renderEncoder,
       uniforms: uniforms,
       params: params)
+      }
     // end update and render
 
     renderEncoder.endEncoding()
