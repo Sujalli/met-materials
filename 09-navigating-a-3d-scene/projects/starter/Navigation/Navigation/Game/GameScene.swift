@@ -49,7 +49,7 @@ struct GameScene{
     }()
     lazy var models: [Model] = [ground, house]
     
-    var camera = FPCamera()
+    var camera = OrthographicCamera()
     
     mutating func update(deltaTime: Float) {
         camera.update(deltaTime: deltaTime)
@@ -65,7 +65,8 @@ struct GameScene{
       }
     
     init(){
-        camera.position = [0, 1.4 ,-4.0]
+        camera.position = [0, 2, 0]
+        camera.rotation.x = .pi / 2
     }
     
     
