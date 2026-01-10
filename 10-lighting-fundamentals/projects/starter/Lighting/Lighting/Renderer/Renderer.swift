@@ -89,9 +89,9 @@ class Renderer: NSObject {
     depthStencilState = Renderer.buildDepthStencilState()
     super.init()
     metalView.clearColor = MTLClearColor(
-      red: 0.93,
-      green: 0.97,
-      blue: 1.0,
+        red: 0.34,
+        green: 0.87,
+        blue: 0.7,
       alpha: 1.0)
     metalView.depthStencilPixelFormat = .depth32Float
     mtkView(
@@ -118,7 +118,9 @@ extension Renderer {
   func updateUniforms(scene: GameScene) {
     uniforms.viewMatrix = scene.camera.viewMatrix
     uniforms.projectionMatrix = scene.camera.projectionMatrix
+    params.lightCount = UInt32(scene.lighting.lights.count)
   }
+    
 
   func draw(scene: GameScene, in view: MTKView) {
     guard
@@ -134,7 +136,13 @@ extension Renderer {
 
     renderEncoder.setDepthStencilState(depthStencilState)
     renderEncoder.setRenderPipelineState(pipelineState)
-
+      
+      var lights = scene.lighting.lights
+        renderEncoder.setFragmentBytes(
+          &lights,
+          length: MemoryLayout<Light>.stride * lights.count,
+          index: LightBuffer.index)
+      
     for model in scene.models {
       model.render(
         encoder: renderEncoder,

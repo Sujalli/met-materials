@@ -30,66 +30,60 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 
-import MetalKit
-import GameController
+import Foundation
 
-
-struct GameScene {
-    
-  let lighting = SceneLighting()
-
-  lazy var gizmo: Model = {
-    Model(name: "gizmo.usdz")
+struct SceneLighting {
+  let sunlight: Light = {
+    var light = Self.buildDefaultLight()
+    light.position = [1, 2, -2]
+    return light
   }()
 
-  lazy var sphere: Model = {
-    Model(name: "lighting-sphere.usdz")
+  let ambientLight: Light = {
+    var light = Self.buildDefaultLight()
+    light.color = [0.05, 0.2, 0]
+    light.type = Ambient
+    return light
   }()
 
-  var models: [Model] = []
-  var camera = ArcballCamera()
+  let redLight: Light = {
+    var light = Self.buildDefaultLight()
+    light.type = Point
+    light.position = [-0.8, 0.76, -0.18]
+    light.color = [1, 0, 0]
+    light.attenuation = [0.2, 0.8, 1.0]
+    return light
+  }()
 
-  var defaultView: Transform {
-    Transform(
-      position: [-1.18, 1.57, -1.28],
-      rotation: [-0.73, 13.3, 0.0])
-  }
+  lazy var spotlight: Light = {
+    var light = Self.buildDefaultLight()
+    light.type = Spot
+    light.position = [-0.64, 0.64, -1.07]
+    light.color = [1, 0, 1]
+    light.attenuation = [0.2, 0.4, 0.2]
+    light.coneAngle = Float(40).degreesToRadians
+    light.coneDirection = [0.5, -0.7, 1]
+    light.coneAttenuation = 20
+    return light
+  }()
+
+  var lights: [Light] = []
 
   init() {
-    camera.distance = 2.5
-    camera.transform = defaultView
-    models = [gizmo, sphere]
+    lights.append(sunlight)
+    lights.append(ambientLight)
+    lights.append(redLight)
+    lights.append(spotlight)
   }
 
-  mutating func update(size: CGSize) {
-    camera.update(size: size)
-  }
-
-  mutating func update(deltaTime: Float) {
-    let input = InputController.shared
-    if input.keysPressed.contains(.one) {
-      camera.transform = Transform()
-    }
-    if input.keysPressed.contains(.two) {
-      camera.transform = defaultView
-    }
-    camera.update(deltaTime: deltaTime)
-    calculateGizmo()
-  }
-
-  mutating func calculateGizmo() {
-    var forwardVector: float3 {
-      let lookat = float4x4(eye: camera.position, target: .zero, up: [0, 1, 0])
-      return [
-        lookat.columns.0.z, lookat.columns.1.z, lookat.columns.2.z
-      ]
-    }
-    var rightVector: float3 {
-      let lookat = float4x4(eye: camera.position, target: .zero, up: [0, 1, 0])
-      return [
-        lookat.columns.0.x, lookat.columns.1.x, lookat.columns.2.x
-      ]
-    }
-    gizmo.position = (forwardVector - rightVector) * 10
+  static func buildDefaultLight() -> Light {
+    var light = Light()
+    light.position = [0, 0, 0]
+    light.color = [1, 1, 1]
+    light.intensity = 1.0
+    light.specularColor = [0.6, 0.6, 0.6]
+    light.attenuation = [1, 0, 0]
+    light.type = Sun
+    return light
   }
 }
