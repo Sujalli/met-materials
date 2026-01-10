@@ -44,24 +44,17 @@ class Renderer: NSObject {
   let depthStencilState: MTLDepthStencilState?
 
   // the models to render
-  lazy var house: Model = {
-    let house = Model(name: "lowpoly-house.usdz")
-    house.setTexture(name: "barn", type: BaseColor)
-    return house
-  }()
+  lazy var scene = GameScene()
+    
+  var camera = FPCamera()
 
-  lazy var ground: Model = {
-    let ground = Model(name: "ground", primitiveType: .plane)
-    ground.setTexture(name: "grass", type: BaseColor)
-    ground.tiling = 16
-    return ground
-  }()
-
-  var timer: Float = 0
+    var lastTime : Double = CFAbsoluteTimeGetCurrent()
   var uniforms = Uniforms()
   var params = Params()
 
   init(metalView: MTKView) {
+      
+      camera.position = [0 , 1.4 , -4.0]
     guard
       let device = MTLCreateSystemDefaultDevice(),
       let commandQueue = device.makeCommandQueue() else {
@@ -128,18 +121,7 @@ extension Renderer: MTKViewDelegate {
     _ view: MTKView,
     drawableSizeWillChange size: CGSize
   ) {
-    let aspect =
-      Float(view.bounds.width) / Float(view.bounds.height)
-    let projectionMatrix =
-      float4x4(
-        projectionFov: Float(70).degreesToRadians,
-        near: 0.1,
-        far: 100,
-        aspect: aspect)
-    uniforms.projectionMatrix = projectionMatrix
-
-    params.width = UInt32(size.width)
-    params.height = UInt32(size.height)
+      scene.update(size: size)
   }
 
   func draw(in view: MTKView) {
@@ -152,23 +134,28 @@ extension Renderer: MTKViewDelegate {
         return
     }
 
-    timer += 0.005
-    uniforms.viewMatrix = float4x4(translation: [0, 1.4, -4.0]).inverse
+//uniforms.viewMatrix = float4x4(translation: [0, 1.4, -4.0]).inverse
 
     renderEncoder.setDepthStencilState(depthStencilState)
     renderEncoder.setRenderPipelineState(pipelineState)
 
     // update and render
-    house.rotation.y = sin(timer)
-    house.render(encoder: renderEncoder, uniforms: uniforms, params: params)
-
-    ground.scale = 40
-    ground.rotation.z = Float(90).degreesToRadians
-    ground.rotation.y = sin(timer)
-    ground.render(
+      
+      let currentTime = CFAbsoluteTimeGetCurrent()
+          let deltaTime = Float(currentTime - lastTime)
+          lastTime = currentTime
+          scene.update(deltaTime: deltaTime)
+      
+      uniforms.viewMatrix = scene.camera.viewMatrix
+      uniforms.projectionMatrix = scene.camera.projectionMatrix
+      
+      
+      for model in scene.models {
+      model.render(
       encoder: renderEncoder,
       uniforms: uniforms,
       params: params)
+      }
     // end update and render
 
     renderEncoder.endEncoding()
